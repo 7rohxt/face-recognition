@@ -87,5 +87,30 @@ cap.release()
 # Close the image show frame
 cv2.destroyAllWindows()
 
-# 3 
+# 3 Load and Preprocess Images
+
+# 3.1 Get Image Directories
+
+anchor = tf.data.Dataset.list_files(ANCHOR_PATH+'\*.jpg').take(300)
+positive = tf.data.Dataset.list_files(POSITIVE_PATH+'\*.jpg').take(300)
+negative = tf.data.Dataset.list_files(NEGATIVE_PATH+'\*.jpg').take(300)
+
+ANCHOR_PATH+'\*.jpg' #looks for all jpg fils in the directory specified by anchorpath
+
+# 3.2 Preprocessing - Scale and Resize
+
+def preprocess(file_path):
+
+    # Read in image from fil path
+    byte_img = tf.io.read_file(file_path)
+    # Load in the image
+    img = tf.io.decode_jpeg(byte_img)
+
+    # Preprocessing steps - resizing the image o be 100x100x3
+    img = tf.image.resize(img, (100,100))
+
+    # Scaling image to be between 0 and 1
+    img = img / 255.0
+
+    return img
 
