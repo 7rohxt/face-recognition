@@ -114,3 +114,129 @@ def preprocess(file_path):
 
     return img
 
+# 3.3 Create Labelled Dataset
+
+# (anchor, positive) ==> 1,1,1,1,1
+# (anchor, negative) ==> 0,0,0,0,0
+
+positives = tf.data.Dataset.zip((anchor, positive, tf.data.Dataset.from_tensor_slices(tf.ones(len(anchor)))))
+negatives = tf.data.Dataset.zip((anchor, negative, tf.data.Dataset.from_tensor_slices(tf.zeros(len(anchor)))))
+data = positives.concatenate(negatives)
+
+# 3.4 Build Train and Test portion
+
+def preprocess_twin(input_img, validation_img, label): 
+    return(preprocess(input_img), preprocess(validation_img), label)
+
+# Build data loader pipeine
+data = data.map(preprocess_twin)
+data = data.cache()
+data = data.shuffle(buffer_size=1024)
+
+# Train Split
+train_data = data.take(round(len(data)*.7)) # taking 70% of the data
+train_data = train_data.batch(16)
+train_data = train_data.prefetch(8) # This starts preprocessing next set to avoid bottleneck our neural network
+
+# Test split
+test_data = data.skip(round(len(data)*.7))
+test_data = test_data.take(round(len(data)*.3))
+test_data = test_data.batch(16)
+test_data = test_data.prefetch(8)
+
+# 4. Model Engineering
+
+# 4.1 Embedding Layer
+
+inp = Input(shape=(100,100,3), name='input_image')
+
+c1 = Conv2D(64,(10,10), activation='relu')(inp)
+m1 = MaxPooling2D(64, (2,2), padding='same')(c1)
+
+c2 = Conv2D(128,(7,7), activation='relu')(m1)
+m2 = MaxPooling2D(64, (2,2), padding='same')(c2)
+
+c3 = Conv2D(128,(4,4), activation='relu')(m2)
+m3 = MaxPooling2D(64, (2,2), padding='same')(c3)
+
+c4 = Conv2D(1256,(4,4), activation='relu')(m3)
+f1 = Flatten()(c4)
+d1 = Dense(1024, activation = 'sigmoid')(f1)
+
+mod = Model(inputs=[inp], outputs=[d1], name = 'embedding')
+
+def make_embedding():
+    inp = Input(shape=(100,100,3), name='input_image')
+
+    # First block
+    c1 = Conv2D(64,(10,10), activation='relu')(inp)
+    m1 = MaxPooling2D(64, (2,2), padding='same')(c1)
+
+    # Second block
+    c2 = Conv2D(128,(7,7), activation='relu')(m1)
+    m2 = MaxPooling2D(64, (2,2), padding='same')(c2)
+
+    # Third block
+    c3 = Conv2D(128,(4,4), activation='relu')(m2)
+    m3 = MaxPooling2D(64, (2,2), padding='same')(c3)
+
+    # Final block
+    c4 = Conv2D(1256,(4,4), activation='relu')(m3)
+    f1 = Flatten()(c4)
+    d1 = Dense(1024, activation = 'sigmoid')(f1)
+
+    return Model(inputs=[inp], outputs=[d1], name = 'embedding')
+
+embedding = make_embedding()
+
+# 4.2 Building Distance Layer
+
+# Custom L1 distance layer
+
+class L1Dist(Layer):
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    # Similarity calculation
+    def call(self, input_embedding, validation_embedding):
+        return tf.math.abs(input_embedding - validation_embedding)
+    
+l1 = L1Dist()
+
+# 4.3 Make Siamese Model
+
+input_image = Input(name='input_img', shape= (100,100,3))
+validation_image = Input(name='validation_img', shape=(100,100,3))
+
+inp_embedding = embedding(input_image)
+val_embedding = embedding(validation_image)
+
+siamese_layer = L1Dist()
+
+distances = siamese_layer(inp_embedding, val_embedding)
+
+classifier = Dense(1, activation = 'sigmoid')(distances)
+
+siamese_network = Model(inputs=[input_image, validation_image], outputs = classifier, name ='SiameseNetwork')
+
+def make_siamese_model():
+
+    # Anchor image imput in the network
+    input_image = Input(name='input_img', shape= (100,100,3))
+
+    # Validation image in the network
+    validation_image = Input(name='validation_img', shape=(100,100,3))
+
+    # Combine siamese distance calculation
+    siamese_layer = L1Dist()
+    siamese_layer._name = 'distance'
+    distances = siamese_layer(embedding(input_image), embedding(validation_image))
+
+    # Classification layer
+    classifier = Dense(1, activation = 'sigmoid')(distances)
+
+    return Model(inputs=[input_image, validation_image], outputs = classifier, name ='SiameseNetwork')
+
+siamese_model = make_siamese_model()
+
+# 5. Training
