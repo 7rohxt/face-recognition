@@ -1,0 +1,4 @@
+cvzone
+ultralytics
+opencv-python
+mediapipe
