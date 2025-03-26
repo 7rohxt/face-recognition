@@ -1,5 +1,6 @@
-spoofenv
-testing-scripts
+spoofenv/
+testing-scripts/
 test.txt
-models
-dataset/data-collect/
+models/
+dataset/
+local-train.py

@@ -5,7 +5,7 @@ from cvzone.FaceDetectionModule import FaceDetector
 import cvzone
 
 ########################################################################
-classID = 0
+classID = 0 # 0 for fake and 1 for real
 outputFolderPath = 'dataset/data-collect'
 confidence = 0.75
 save = True
