@@ -1,2 +1,4 @@
 raenv/
-images/
+base-images/
+test-images/
+attendance-log.csv
