@@ -87,6 +87,21 @@ def unknown_list(img):
 encode_list_known = find_encodings(images)
 print('Encoding Done')
 
+# Display log in time in bounding box from attendance log 
+
+# Load attendance log into a dictionary
+attendance_log = {}
+log_path = 'recognition-attendance/attendance-log.csv'
+
+if os.path.exists(log_path):
+    with open(log_path, 'r') as f:
+        lines = f.readlines()[1:]  # Skip header
+        for line in lines:
+            parts = line.strip().split(',')
+            if len(parts) == 2:
+                name = parts[0].strip().upper()
+                attendance_log[parts[0]] = parts[1]
+
 # uploaded_image_path = 'recognition-attendance/test-images/Virat Kohli.jpg'  # Change path as needed
 # img = cv2.imread(uploaded_image_path)
 
@@ -139,8 +154,16 @@ while True:
         y1, x2, y2, x1 = y1*4, x2*4, y2*4, x1*4
 
         cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
-        cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
+
+        logged_time = attendance_log.get(name, "Time Not Found")
+
+        # Display name
+        cv2.rectangle(img, (x1, y2 - 55), (x2, y2), (0, 255, 0), cv2.FILLED)
+        cv2.putText(img, name, (x1 + 6, y2 - 35), cv2.FONT_HERSHEY_COMPLEX, 0.7, (255, 255, 255), 2)
+
+        # Display Logged In time
+        cv2.putText(img, f"Logged in: {logged_time}", (x1 + 6, y2 - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 2)
+
         mark_attendance(name)
 
     cv2.imshow('Webcam', img)
