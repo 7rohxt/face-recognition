@@ -3,6 +3,8 @@ import numpy as np
 import face_recognition
 import os
 from datetime import datetime
+
+from addface import add_new_face
  
 path = 'recognition-attendance/base-images'
 images = []
@@ -162,12 +164,24 @@ while True:
         cv2.putText(img, name, (x1 + 6, y2 - 35), cv2.FONT_HERSHEY_COMPLEX, 0.7, (255, 255, 255), 2)
 
         # Display Logged In time
-        cv2.putText(img, f"Logged in: {logged_time}", (x1 + 6, y2 - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 2)
-
+        cv2.putText(img, f"In Time: {logged_time}", (x1 + 6, y2 - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 2)
+        
         mark_attendance(name)
 
     cv2.imshow('Webcam', img)
     # cv2.imshow('Uploaded Image', img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+
+    key = cv2.waitKey(1) & 0xFF
+
+    if key == ord('n'):
+        new_encoding, new_name = add_new_face(img)
+
+        if new_encoding and new_name:
+            encode_list_known.append(new_encoding)
+            class_names.append(new_name)
+            print(f"Added new face: {new_name}")
+
+    elif key == ord('q'):
         break
+
     # cv2.destroyAllWindows()
