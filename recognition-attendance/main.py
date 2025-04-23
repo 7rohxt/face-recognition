@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 from face_utils import find_encodings, mark_attendance, unknown_list, load_known_faces, load_unknown_faces
-from manage_users import *
+from manage_users import add_new_user, remove_user
  
 # Load known images
 path = 'recognition-attendance/base-images'
@@ -106,6 +106,12 @@ while True:
             class_names.append(new_name)
             print(f"Added new face: {new_name}")
 
+    
+    elif key == ord('r'):
+        # Remove user
+        user_name = input("Enter the name of the user to: ").strip()
+        remove_user(user_name, encode_list_known, class_names, images)
+        
     elif key == ord('c'):
         run_recognition = True
 

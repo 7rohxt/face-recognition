@@ -2,7 +2,7 @@ import cv2
 import face_recognition
 import os
 
-def add_new_face(img):
+def add_new_user(img):
 
     save_path = 'recognition-attendance/base-images'
 
@@ -23,3 +23,13 @@ def add_new_face(img):
     print(f"Saved new face image as: {full_path}")
 
     return encodings[0], name
+
+def remove_user(user_name, encodings_list, class_names, image_list):
+    if user_name in class_names:
+        idx = class_names.index(user_name)
+        class_names.pop(idx)
+        encodings_list.pop(idx)
+        image_list.pop(idx)
+        print(f"User '{user_name}' removed successfully.")
+    else:
+        print(f"User '{user_name}' not found.")
