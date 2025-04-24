@@ -3,6 +3,7 @@ import numpy as np
 import face_recognition
 import os
 from datetime import datetime
+import time
 
 from face_utils import find_encodings, mark_attendance, unknown_list, load_known_faces, load_unknown_faces
 from manage_users import add_new_user, remove_user
@@ -40,8 +41,9 @@ if os.path.exists(log_path):
 # for webcam 
 cap = cv2.VideoCapture(0)
 
-# frame_skip = 3
-# frame_count = 0
+run_recognition = False
+recognition_start_time = None
+
 while True:
     success, img = cap.read()
     # frame_count += 1
@@ -55,20 +57,23 @@ while True:
     current_face = face_recognition.face_locations(scaled_img)
     encodes_current_face = face_recognition.face_encodings(scaled_img, current_face)
 
+    if run_recognition and time.time() - recognition_start_time > 3:
+        run_recognition = False
+        print("Recognition ended after 3 seconds.")
+
     for encode_face, face_loc in zip(encodes_current_face, current_face):
         y1, x2, y2, x1 = face_loc
         y1, x2, y2, x1 = y1*4, x2*4, y2*4, x1*4
 
         cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-        if 'run_recognition' in locals() and run_recognition:
+        if run_recognition:
             matches = face_recognition.compare_faces(encode_list_known, encode_face)
             face_dis = face_recognition.face_distance(encode_list_known, encode_face)
             match_index = np.argmin(face_dis)
 
             if len(face_dis) > 0 and face_dis[match_index] < 0.50:
                 name = class_names[match_index].upper()
-
             else:
                 unknown_matches = face_recognition.compare_faces(encoded_unknowns, encode_face)
                 unknown_distances = face_recognition.face_distance(encoded_unknowns, encode_face)
@@ -79,7 +84,6 @@ while True:
                     print(f"Matched with a previous unknown: {name}")
                 else:
                     name = unknown_list(img)
-
                     encoded = face_recognition.face_encodings(img)
                     if encoded:
                         encoded_unknowns.append(encoded[0])
@@ -92,7 +96,8 @@ while True:
             cv2.putText(img, f"In Time: {logged_time}", (x1 + 6, y2 - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 2)
 
             mark_attendance(name)
-
+    
+                
     cv2.imshow('Webcam', img)
     # cv2.imshow('Uploaded Image', img)
 
@@ -101,7 +106,7 @@ while True:
     if key == ord('n'):
         new_encoding, new_name = add_new_user(img)
 
-        if new_encoding and new_name:
+        if new_encoding is not None and new_name:
             encode_list_known.append(new_encoding)
             class_names.append(new_name)
             print(f"Added new face: {new_name}")
@@ -109,11 +114,13 @@ while True:
     
     elif key == ord('r'):
         # Remove user
-        user_name = input("Enter the name of the user to: ").strip()
+        user_name = input("Enter the name of the user to remove: ").strip()
         remove_user(user_name, encode_list_known, class_names, images)
         
     elif key == ord('c'):
         run_recognition = True
+        recognition_start_time = time.time()
+        print("Recognition started.")
 
     elif key == ord('q'):
         break

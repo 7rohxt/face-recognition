@@ -27,9 +27,22 @@ def add_new_user(img):
 def remove_user(user_name, encodings_list, class_names, image_list):
     if user_name in class_names:
         idx = class_names.index(user_name)
+        
+        file_dir = 'recognition-attendance/base-images'
+        file_path = os.path.join(file_dir, f"{user_name}.jpg")
+        
+        # Remove from memory
         class_names.pop(idx)
         encodings_list.pop(idx)
         image_list.pop(idx)
+        
+        # Delete image file from disk
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"Image '{file_path}' deleted.")
+        else:
+            print(f"Image file for user '{user_name}' not found.")
+
         print(f"User '{user_name}' removed successfully.")
     else:
         print(f"User '{user_name}' not found.")
