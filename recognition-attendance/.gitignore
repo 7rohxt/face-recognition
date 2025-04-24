@@ -3,3 +3,4 @@ base-images/
 test-images/
 attendance-log.csv
 unknowns/
+__pycache__
