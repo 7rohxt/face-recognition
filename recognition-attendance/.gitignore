@@ -4,3 +4,4 @@ test-images/
 attendance-log.csv
 unknowns/
 __pycache__
+serviceAccountKey.json
