@@ -2,7 +2,8 @@ import cv2
 import face_recognition
 import os
 
-from face_utils import upload_images_to_firebase
+from firebase_utils import upload_images_to_firebase
+from firebase_utils import remove_image_from_firebase
 
 def add_new_user(img):
     save_path = 'recognition-attendance/base-images'
@@ -22,7 +23,7 @@ def add_new_user(img):
     cv2.imwrite(full_path, img)
     print(f"Saved new face image as: {full_path}")
 
-    upload_images_to_firebase(save_path, "images")
+    upload_images_to_firebase(save_path, "known_faces")
 
     return encodings[0], name, img
 
@@ -45,6 +46,9 @@ def remove_user(user_name, encodings_list, class_names, image_list):
         else:
             print(f"Image file for user '{user_name}' not found.")
 
+        
+
         print(f"User '{user_name}' removed successfully.")
+
     else:
         print(f"User '{user_name}' not found.")
