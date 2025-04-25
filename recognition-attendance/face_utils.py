@@ -51,7 +51,6 @@ def load_unknown_faces(unknown_path):
     return encoded_unknowns, unknown_names
 
 def mark_attendance(name):
-    print(f"Marking attendance for {name}")  # Debug line
     file_path = 'recognition-attendance/attendance-log.csv'
     
     if not os.path.exists(file_path):
@@ -67,7 +66,7 @@ def mark_attendance(name):
             f.write(f'\n{name},{dtString}')
             print(f"Wrote to CSV: {name},{dtString}")
         else:
-            print("Already Marked")
+            print(f"Already Marked for {name}")
 
 def unknown_list(img):
     folder_path = 'recognition-attendance/unknowns'
@@ -81,3 +80,14 @@ def unknown_list(img):
     cv2.imwrite(save_path, img)
     print(f"Saved unknown face as {filename}")
     return name
+
+def clear_unknown_faces_local(local_dir="recognition-attendance/unknowns"):
+ 
+    if os.path.exists(local_dir):
+        for filename in os.listdir(local_dir):
+            file_path = os.path.join(local_dir, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+                print(f"Deleted local unknown face: {filename}")
+    else:
+        print("Unknown faces folder not found locally.")

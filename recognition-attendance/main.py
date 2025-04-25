@@ -6,7 +6,8 @@ from datetime import datetime
 import time
 from firebase_admin import storage
 
-from face_utils import find_encodings, mark_attendance, unknown_list, load_known_faces, load_unknown_faces, upload_images_to_firebase
+from face_utils import find_encodings, mark_attendance, unknown_list, load_known_faces, load_unknown_faces, clear_unknown_faces_local
+from firebase_utils import upload_images_to_firebase, remove_image_from_firebase, clear_unknown_faces_firebase
 from manage_users import add_new_user, remove_user
 
 # Load known images
@@ -106,11 +107,20 @@ while True:
             class_names.append(new_name)
             images.append(new_image)
             print(f"Added new face: {new_name}")
+        
+        # image_path = f"recognition-attendance/base-images/{new_name}.jpg"
+        # upload_images_to_firebase(image_path, "images")
 
     elif key == ord('r'):
         # Remove user
         user_name = input("Enter the name of the user to remove: ").strip()
         remove_user(user_name, encode_list_known, class_names, images)
+
+        remove_image_from_firebase("known_faces", f"{user_name}.jpg")
+    
+    elif key == ord('u'):
+        clear_unknown_faces_local()
+        clear_unknown_faces_firebase()
 
     elif key == ord('q'):
         break
