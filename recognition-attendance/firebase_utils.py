@@ -29,6 +29,21 @@ def upload_images_to_firebase(folder_path, folder_name_in_firebase):
             blob.upload_from_filename(local_path)
             print(f"Uploaded {filename} to {folder_name_in_firebase}/ in Firebase.")
 
+def add_user_to_realtime_database(name, designation):
+    data = {
+        "name": name,
+        "designation": designation,
+        "total_attendance": 0,
+        "last_attendance_time": None
+    }
+    ref.child(name).set(data)
+    print(f"User {name} added to Firebase with designation {designation}.")
+
+def remove_user_from_realtime_database(name):
+    user_ref = ref.child(name)
+    user_ref.delete()
+    print(f"Removed {name} from Firebase Realtime Database.")
+
 def remove_image_from_firebase(folder_name_in_firebase, filename):
     try:
         blob = bucket.blob(f"{folder_name_in_firebase}/{filename}")

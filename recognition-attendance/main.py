@@ -7,6 +7,7 @@ import time
 from firebase_admin import storage
 
 from face_utils import find_encodings, mark_attendance, unknown_list, load_known_faces, load_unknown_faces, clear_unknown_faces_local
+from firebase_utils import add_user_to_realtime_database, remove_user_from_realtime_database
 from firebase_utils import upload_images_to_firebase, remove_image_from_firebase, clear_unknown_faces_firebase
 from manage_users import add_new_user, remove_user
 
@@ -103,10 +104,13 @@ while True:
         new_encoding, new_name, new_image = add_new_user(img)
 
         if new_encoding is not None and new_name:
+            print("Enter the designation")
+            designation = input()
             encode_list_known.append(new_encoding)
             class_names.append(new_name)
             images.append(new_image)
             print(f"Added new face: {new_name}")
+            add_user_to_realtime_database(new_name,designation)
         
         # image_path = f"recognition-attendance/base-images/{new_name}.jpg"
         # upload_images_to_firebase(image_path, "images")
@@ -115,6 +119,7 @@ while True:
         # Remove user
         user_name = input("Enter the name of the user to remove: ").strip()
         remove_user(user_name, encode_list_known, class_names, images)
+        remove_user_from_realtime_database(user_name)
 
         remove_image_from_firebase("known_faces", f"{user_name}.jpg")
     
