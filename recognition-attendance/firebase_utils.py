@@ -1,9 +1,57 @@
 import os
 import cv2
+import numpy as np
+import face_recognition
 from datetime import datetime, timedelta
 
-from firebase_configure import bucket 
-from firebase_configure import ref
+from firebase_configure import bucket, ref
+from firebase_admin import storage
+
+
+def load_known_faces_firebase(bucket_folder="known_faces"):
+    bucket = storage.bucket()
+    blobs = bucket.list_blobs(prefix=bucket_folder + "/")
+
+    images = []
+    class_names = []
+
+    for blob in blobs:
+        if blob.name.endswith(('.png', '.jpg', '.jpeg')):
+            img_bytes = blob.download_as_bytes()
+            img_array = np.frombuffer(img_bytes, np.uint8)
+            img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
+            if img is not None:
+                images.append(img)
+                class_name = os.path.splitext(os.path.basename(blob.name))[0]
+                class_names.append(class_name)
+
+    print("Loaded known faces from Firebase:", class_names)
+    return images, class_names
+
+def load_unknown_faces_firebase(bucket_folder="unknown_faces"):
+    bucket = storage.bucket()
+    blobs = bucket.list_blobs(prefix=bucket_folder + "/")
+
+    encoded_unknowns = []
+    unknown_names = []
+
+    for blob in blobs:
+        if blob.name.endswith(('.png', '.jpg', '.jpeg')):
+            img_bytes = blob.download_as_bytes()
+            img_array = np.frombuffer(img_bytes, np.uint8)
+            img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
+            if img is not None:
+                rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                encodings = face_recognition.face_encodings(rgb)
+                if encodings:
+                    encoded_unknowns.append(encodings[0])
+                    name = os.path.splitext(os.path.basename(blob.name))[0]
+                    unknown_names.append(name)
+
+    print("Loaded unknown faces from Firebase:", unknown_names)
+    return encoded_unknowns, unknown_names
 
 def upload_images_to_firebase(folder_path, folder_name_in_firebase):
     for filename in os.listdir(folder_path):
