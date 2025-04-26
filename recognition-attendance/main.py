@@ -27,21 +27,6 @@ print('Encoding Done')
 upload_images_to_firebase("recognition-attendance/base-images", "known_faces")
 upload_images_to_firebase("recognition-attendance/unknowns", "unknown_faces")
 
-# Display log in time in bounding box from attendance log 
-
-# Load attendance log into a dictionary
-attendance_log = {}
-log_path = 'recognition-attendance/attendance-log.csv'
-
-if os.path.exists(log_path):
-    with open(log_path, 'r') as f:
-        lines = f.readlines()[1:]  # Skip header
-        for line in lines:
-            parts = line.strip().split(',')
-            if len(parts) == 2:
-                name = parts[0].strip().upper()
-                attendance_log[parts[0]] = parts[1]
-
 # uploaded_image_path = 'recognition-attendance/test-images/Virat Kohli.jpg' 
 # img = cv2.imread(uploaded_image_path)
 
@@ -72,7 +57,7 @@ while True:
         match_index = np.argmin(face_dis)
 
         if len(face_dis) > 0 and face_dis[match_index] < 0.50:
-            name = class_names[match_index]#.upper() ## mismatch in incrementing attendance
+            name = class_names[match_index]#.upper() ## mismatch in incrementing
         else:
             unknown_matches = face_recognition.compare_faces(encoded_unknowns, encode_face)
             unknown_distances = face_recognition.face_distance(encoded_unknowns, encode_face)
