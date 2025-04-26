@@ -3,24 +3,6 @@ import cv2
 from firebase_configure import bucket 
 from firebase_configure import ref
 
-data = {
-    "Rohit": {
-        "name": "Rohit Karthick",
-        "role": "AI Intern",
-        "total_attendance": 5, 
-        "last_attendance_time": "2025-04-11 00:54:34"
-    },
-    "Dhanush": {
-        "name": "Dhanush",
-        "role": "Data Analyst",
-        "total_attendance": 2, 
-        "last_attendance_time": "2025-04-10 00:24:34"
-    },
-}
-
-for key, value in data.items():
-    ref.child(key).set(value)
-
 def upload_images_to_firebase(folder_path, folder_name_in_firebase):
     for filename in os.listdir(folder_path):
         if filename.endswith(".jpg") or filename.endswith(".png"):
@@ -83,3 +65,22 @@ def clear_unknown_faces_firebase(firebase_folder="unknown_faces"):
 
 def update_attendance_database():
     pass
+
+#  To manually add data to the database
+# data = {
+#     "Rohit": {
+#         "name": "Rohit Karthick",
+#         "role": "AI Intern",
+#         "total_attendance": 5, 
+#         "last_attendance_time": "2025-04-11 00:54:34"
+#     },
+#     "Dhanush": {
+#         "name": "Dhanush",
+#         "role": "Data Analyst",
+#         "total_attendance": 2, 
+#         "last_attendance_time": "2025-04-10 00:24:34"
+#     },
+# }
+
+# for key, value in data.items():
+#     ref.child(key).set(value)
