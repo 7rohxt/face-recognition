@@ -4,7 +4,7 @@ import face_recognition
 
 from face_utils import find_encodings, mark_attendance, unknown_list, load_known_faces, load_unknown_faces, clear_unknown_faces_local
 from firebase_utils import add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase
-from firebase_utils import upload_images_to_firebase, remove_image_from_firebase, clear_unknown_faces_firebase, upload_single_image_to_firebase
+from firebase_utils import  clear_unknown_faces_firebase, upload_single_image_to_firebase, remove_user_from_firebase
 from manage_users import add_new_user, remove_user
 from firebase_utils import load_known_faces_firebase, load_unknown_faces_firebase
 
@@ -103,21 +103,11 @@ while True:
 
     elif key == ord('r'):
         user_name = input("Enter the name of the user to remove: ").strip()
-        
+       
         if USE_CLOUD:
+            remove_user_from_realtime_database(user_name)  # Remove from Realtime Database separately
+            remove_user_from_firebase(user_name, encode_list_known, class_names, images)
 
-            remove_user_from_realtime_database(user_name)
-            remove_image_from_firebase("known_faces", f"{user_name}.jpg")
-            
-            # Also update the local lists in cloud mode
-            if user_name in class_names:
-                idx = class_names.index(user_name)
-                class_names.pop(idx)
-                encode_list_known.pop(idx)
-                images.pop(idx)
-                print(f"User '{user_name}' removed from local lists as well.")
-            
-            print(f"User '{user_name}' removed from Firebase.")
         else:
 
             remove_user(user_name, encode_list_known, class_names, images)

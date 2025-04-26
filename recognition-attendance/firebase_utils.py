@@ -94,17 +94,25 @@ def remove_user_from_realtime_database(name):
     user_ref.delete()
     print(f"Removed {name} from Firebase Realtime Database.")
 
-def remove_image_from_firebase(folder_name_in_firebase, filename):
+def remove_user_from_firebase(user_name, encodings_list, class_names, image_list):
+    if user_name in class_names:
+        idx = class_names.index(user_name)
+        class_names.pop(idx)
+        encodings_list.pop(idx)
+        image_list.pop(idx)
+        print(f"Removed {user_name} from local memory.")
+        
     try:
-        blob = bucket.blob(f"{folder_name_in_firebase}/{filename}")
+        from firebase_utils import bucket
+        blob = bucket.blob(f"known_faces/{user_name}.jpg")
         if blob.exists():
             blob.delete()
-            print(f"Deleted {filename} from {folder_name_in_firebase}/ in Firebase.")
+            print(f"Deleted {user_name}.jpg from Firebase Storage.")
         else:
-            print(f"{filename} does not exist in Firebase.")
+            print(f"{user_name}.jpg does not exist in Firebase Storage.")
     except Exception as e:
-        print(f"Error deleting {filename} from Firebase: {e}")
-    
+        print(f"Error deleting {user_name}.jpg from Firebase: {e}")
+
 def clear_unknown_faces_firebase(firebase_folder="unknown_faces"):
     try:
         for blob in bucket.list_blobs(prefix=f"{firebase_folder}/"):
