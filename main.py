@@ -21,10 +21,10 @@ if USE_CLOUD:
     images, class_names = load_known_faces_firebase()
     encoded_unknowns, unknown_names = load_unknown_faces_firebase()
 else:
-    path = 'recognition-attendance/base-images'
+    path = 'base-images'
     images, class_names = load_known_faces(path)
 
-    unknown_path = 'recognition-attendance/unknowns'
+    unknown_path = 'unknowns'
     encoded_unknowns, unknown_names = load_unknown_faces(unknown_path)
 
 encode_list_known = find_encodings(images)
@@ -98,7 +98,7 @@ while True:
                 upload_single_image_to_firebase(new_name, new_image, "known_faces")
                 add_user_to_realtime_database(new_name, designation) 
             else:  
-                image_path = f"recognition-attendance/base-images/{new_name}.jpg"
+                image_path = f"base-images/{new_name}.jpg"
                 cv2.imwrite(image_path, new_image)
 
             encode_list_known.append(new_encoding)

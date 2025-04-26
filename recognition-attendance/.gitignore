@@ -1,8 +1,0 @@
-raenv/
-base-images/
-test-images/
-attendance-log.csv
-unknowns/
-__pycache__
-serviceAccountKey.json
-basics.py

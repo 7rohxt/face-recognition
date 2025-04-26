@@ -51,7 +51,7 @@ def load_unknown_faces(unknown_path):
     return encoded_unknowns, unknown_names
 
 def mark_attendance(name):
-    file_path = 'recognition-attendance/attendance-log.csv'
+    file_path = 'attendance-log.csv'
     
     if not os.path.exists(file_path):
         with open(file_path, 'w') as f:
@@ -69,7 +69,7 @@ def mark_attendance(name):
             print(f"Already Marked for {name}")
 
 def unknown_list(img):
-    folder_path = 'recognition-attendance/unknowns'
+    folder_path = 'unknowns'
     os.makedirs(folder_path, exist_ok=True)
 
     count = len(os.listdir(folder_path)) + 1
@@ -84,7 +84,7 @@ def unknown_list(img):
 # Mange Users
 
 def add_new_user(img):
-    save_path = 'recognition-attendance/base-images'
+    save_path = 'base-images'
 
     rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     encodings = face_recognition.face_encodings(rgb_img)
@@ -107,7 +107,7 @@ def remove_user(user_name, encodings_list, class_names, image_list):
     if user_name in class_names:
         idx = class_names.index(user_name)
         
-        file_dir = 'recognition-attendance/base-images'
+        file_dir = 'base-images'
         file_path = os.path.join(file_dir, f"{user_name}.jpg")
         
         # Remove from memory
@@ -127,7 +127,7 @@ def remove_user(user_name, encodings_list, class_names, image_list):
     else:
         print(f"User '{user_name}' not found.")
 
-def clear_unknown_faces_local(local_dir="recognition-attendance/unknowns"):
+def clear_unknown_faces_local(local_dir="unknowns"):
  
     if os.path.exists(local_dir):
         for filename in os.listdir(local_dir):
