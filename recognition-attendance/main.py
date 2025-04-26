@@ -2,11 +2,17 @@ import cv2
 import numpy as np
 import face_recognition
 
-from face_utils import find_encodings, mark_attendance, unknown_list, load_known_faces, load_unknown_faces, clear_unknown_faces_local
-from firebase_utils import add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase
-from firebase_utils import  clear_unknown_faces_firebase, upload_single_image_to_firebase, remove_user_from_firebase
-from manage_users import add_new_user, remove_user
-from firebase_utils import load_known_faces_firebase, load_unknown_faces_firebase
+from local_utils import (
+    find_encodings, mark_attendance, unknown_list, 
+    load_known_faces, load_unknown_faces, clear_unknown_faces_local,
+    add_new_user, remove_user
+)
+
+from firebase_utils import (
+    add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase,
+    clear_unknown_faces_firebase, upload_single_image_to_firebase, remove_user_from_firebase,
+    load_known_faces_firebase, load_unknown_faces_firebase
+)
 
 USE_CLOUD = True
 
