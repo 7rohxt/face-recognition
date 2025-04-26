@@ -1,5 +1,7 @@
 import os
 import cv2
+from datetime import datetime, timedelta
+
 from firebase_configure import bucket 
 from firebase_configure import ref
 
@@ -13,13 +15,13 @@ def upload_images_to_firebase(folder_path, folder_name_in_firebase):
   
 def upload_single_image_to_firebase(new_name, new_img, folder_name_in_firebase):
     try:
-        # Encode the image to memory (as JPEG)
+        # Encode the image 
         success, encoded_image = cv2.imencode('.jpg', new_img)
         if not success:
             print("Failed to encode image.")
             return
 
-        # Upload the encoded image directly to Firebase
+        # Upload to Firebase
         filename = f"{new_name}.jpg"
         blob = bucket.blob(f"{folder_name_in_firebase}/{filename}")
         blob.upload_from_string(encoded_image.tobytes(), content_type='image/jpeg')
@@ -63,8 +65,31 @@ def clear_unknown_faces_firebase(firebase_folder="unknown_faces"):
     except Exception as e:
         print(f"Error clearing unknown faces from Firebase: {e}")
 
-def update_attendance_database():
-    pass
+attendance_flags = {}
+
+def update_attendance_firebase(name):
+    now = datetime.now()
+
+    # Check if user recognised in the last 10 seconds
+    if name in attendance_flags:
+        last_time = attendance_flags[name]
+        if (now - last_time) < timedelta(seconds=10):
+            print(f"{name}'s attendance marked just now")
+            return
+
+    # Update in Firebase
+    user_ref = ref.child(name)
+    user_data = user_ref.get()
+
+    if user_data:
+        new_total = user_data.get("total_attendance", 0) + 1
+        user_ref.update({
+            "total_attendance": new_total,
+            "last_attendance_time": now.strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+        attendance_flags[name] = now
+        print(f"Attendance updated for {name}")
 
 #  To manually add data to the database
 # data = {

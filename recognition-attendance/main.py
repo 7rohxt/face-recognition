@@ -7,7 +7,7 @@ import time
 from firebase_admin import storage
 
 from face_utils import find_encodings, mark_attendance, unknown_list, load_known_faces, load_unknown_faces, clear_unknown_faces_local
-from firebase_utils import add_user_to_realtime_database, remove_user_from_realtime_database
+from firebase_utils import add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase
 from firebase_utils import upload_images_to_firebase, remove_image_from_firebase, clear_unknown_faces_firebase, upload_single_image_to_firebase
 from manage_users import add_new_user, remove_user
 
@@ -72,7 +72,7 @@ while True:
         match_index = np.argmin(face_dis)
 
         if len(face_dis) > 0 and face_dis[match_index] < 0.50:
-            name = class_names[match_index].upper()
+            name = class_names[match_index]#.upper() ## mismatch in incrementing attendance
         else:
             unknown_matches = face_recognition.compare_faces(encoded_unknowns, encode_face)
             unknown_distances = face_recognition.face_distance(encoded_unknowns, encode_face)
@@ -94,7 +94,10 @@ while True:
         cv2.putText(img, name, (x1 + 6, y2 - 12), cv2.FONT_HERSHEY_COMPLEX, 0.7, (255, 255, 255), 2)
         # cv2.putText(img, f"In Time: {logged_time}", (x1 + 6, y2 - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 2)
 
-        mark_attendance(name)
+        # mark_attendance(name) ## update attendence locall in excel sheet
+
+        if name in class_names:
+            update_attendance_firebase(name) ## update attendance firebase
 
     # Continue displaying the webcam feed
     cv2.imshow('Webcam', img)
