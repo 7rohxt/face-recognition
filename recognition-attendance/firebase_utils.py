@@ -1,5 +1,5 @@
 import os
-
+import cv2
 from firebase_configure import bucket 
 from firebase_configure import ref
 
@@ -28,6 +28,24 @@ def upload_images_to_firebase(folder_path, folder_name_in_firebase):
             blob = bucket.blob(f"{folder_name_in_firebase}/{filename}")
             blob.upload_from_filename(local_path)
             print(f"Uploaded {filename} to {folder_name_in_firebase}/ in Firebase.")
+  
+def upload_single_image_to_firebase(new_name, new_img, folder_name_in_firebase):
+    try:
+        # Encode the image to memory (as JPEG)
+        success, encoded_image = cv2.imencode('.jpg', new_img)
+        if not success:
+            print("Failed to encode image.")
+            return
+
+        # Upload the encoded image directly to Firebase
+        filename = f"{new_name}.jpg"
+        blob = bucket.blob(f"{folder_name_in_firebase}/{filename}")
+        blob.upload_from_string(encoded_image.tobytes(), content_type='image/jpeg')
+
+        print(f"Uploaded {filename} directly to {folder_name_in_firebase}/ in Firebase.")
+
+    except Exception as e:
+        print(f"Error uploading image to Firebase: {e}")
 
 def add_user_to_realtime_database(name, designation):
     data = {

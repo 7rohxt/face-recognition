@@ -23,7 +23,7 @@ def add_new_user(img):
     cv2.imwrite(full_path, img)
     print(f"Saved new face image as: {full_path}")
 
-    upload_images_to_firebase(save_path, "known_faces")
+    # upload_images_to_firebase(save_path, "known_faces")
 
     return encodings[0], name, img
 
