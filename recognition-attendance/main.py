@@ -87,6 +87,7 @@ while True:
                 if encoded:
                     encoded_unknowns.append(encoded[0])
                     unknown_names.append(name)
+                    upload_single_image_to_firebase(name, img, "unknown_faces")
 
         # Show name and attendance
         cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
