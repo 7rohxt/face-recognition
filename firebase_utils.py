@@ -3,9 +3,10 @@ import cv2
 import numpy as np
 import face_recognition
 from datetime import datetime, timedelta
+import uuid
 
 from firebase_configure import bucket, ref
-from firebase_admin import storage
+from firebase_admin import storage, db
 
 def find_encodings(images):
     encodeList = []
@@ -135,6 +136,30 @@ def remove_user_from_firebase(user_name, encodings_list, class_names, image_list
     except Exception as e:
         print(f"Error deleting {user_name}.jpg from Firebase: {e}")
 
+def upload_unknown_face_to_firebase(img):
+
+    name = f"Unknown_{str(uuid.uuid4().hex[:4])}"
+    time_now = datetime.now()
+    filename = f"unknown_faces/{name}_{time_now}.jpg"
+
+    img_bgr = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    _, img_encoded = cv2.imencode('.jpg', img_bgr)
+
+    bucket = storage.bucket()
+    blob = bucket.blob(filename)
+    blob.upload_from_string(img_encoded.tobytes(), content_type='image/jpeg')
+
+    db_ref = db.reference('Unknown Faces')
+    db_ref.push({
+        'id': name,
+        'recognized_at': time_now.isoformat(),
+        'image_url': f"gs://face-attendance-8a90a/{filename}"
+    })
+
+    print(f"Uploaded unknown face {name} to Firebase Storage and saved to Realtime Database")
+
+    return name
+
 def clear_unknown_faces_firebase(firebase_folder="unknown_faces"):
     try:
         for blob in bucket.list_blobs(prefix=f"{firebase_folder}/"):
@@ -144,7 +169,6 @@ def clear_unknown_faces_firebase(firebase_folder="unknown_faces"):
         print(f"Error clearing unknown faces from Firebase: {e}")
 
 attendance_flags = {}
-
 def update_attendance_firebase(name):
     now = datetime.now()
 
@@ -168,22 +192,3 @@ def update_attendance_firebase(name):
 
         attendance_flags[name] = now
         print(f"Attendance updated for {name}")
-
-#  To manually add data to the database
-# data = {
-#     "Rohit": {
-#         "name": "Rohit Karthick",
-#         "role": "AI Intern",
-#         "total_attendance": 5, 
-#         "last_attendance_time": "2025-04-11 00:54:34"
-#     },
-#     "Dhanush": {
-#         "name": "Dhanush",
-#         "role": "Data Analyst",
-#         "total_attendance": 2, 
-#         "last_attendance_time": "2025-04-10 00:24:34"
-#     },
-# }
-
-# for key, value in data.items():
-#     ref.child(key).set(value)

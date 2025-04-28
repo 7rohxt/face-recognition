@@ -8,7 +8,7 @@ if USE_CLOUD:
     from firebase_utils import (
         find_encodings, encode_new_face,
         add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase,
-        clear_unknown_faces_firebase, upload_single_image_to_firebase, remove_user_from_firebase,
+        clear_unknown_faces_firebase, upload_single_image_to_firebase, remove_user_from_firebase, upload_unknown_face_to_firebase,
         load_known_faces_firebase, load_unknown_faces_firebase
     )
 else:
@@ -66,14 +66,20 @@ while True:
                 matched_index = np.argmin(unknown_distances)
                 name = unknown_names[matched_index]
                 print(f"Matched with a previous unknown: {name}")
+
             else:
-                name = unknown_list(img)
-                encoded = face_recognition.face_encodings(img)
-                if encoded:
-                    encoded_unknowns.append(encoded[0])
-                    unknown_names.append(name)
-                    if USE_CLOUD:
-                        upload_single_image_to_firebase(name, img, "unknown_faces")
+                encodings = face_recognition.face_encodings(img)
+                
+                if USE_CLOUD:
+                    new_name = upload_unknown_face_to_firebase(img)
+                else:
+                    new_name = unknown_list(img)
+
+                if encodings:
+                    encoded_unknowns.append(encodings[0])
+
+                unknown_names.append(new_name)
+                name = new_name
 
         # Display name in the bounding box
         cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
@@ -128,7 +134,7 @@ while True:
             print("Cleared unknown faces from Firebase.")
         else:
             clear_unknown_faces_local()  
-        print("Cleared unknown faces from local storage.")
+            print("Cleared unknown faces from local storage.")
 
 
     elif key == ord('q'):
