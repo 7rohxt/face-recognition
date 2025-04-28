@@ -7,6 +7,16 @@ from datetime import datetime, timedelta
 from firebase_configure import bucket, ref
 from firebase_admin import storage
 
+def find_encodings(images):
+    encodeList = []
+    for img in images:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        encode = face_recognition.face_encodings(img)
+        if len(encode) > 0:  # Only append if a face is detected
+            encodeList.append(encode[0])
+        else:
+            print("No face found in one of the images, skipping it.")
+    return encodeList
 
 def load_known_faces_firebase(bucket_folder="known_faces"):
     bucket = storage.bucket()
@@ -60,7 +70,19 @@ def upload_images_to_firebase(folder_path, folder_name_in_firebase):
             blob = bucket.blob(f"{folder_name_in_firebase}/{filename}")
             blob.upload_from_filename(local_path)
             print(f"Uploaded {filename} to {folder_name_in_firebase}/ in Firebase.")
-  
+
+def encode_new_face(img):
+    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    encodings = face_recognition.face_encodings(rgb_img)
+
+    if not encodings:
+        print("No face found in the frame.")
+        return None, None, None
+
+    name = input("Enter name for the new face: ").strip()
+
+    return encodings[0], name, img
+ 
 def upload_single_image_to_firebase(new_name, new_img, folder_name_in_firebase):
     try:
         # Encode the image 

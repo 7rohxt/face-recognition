@@ -2,24 +2,26 @@ import cv2
 import numpy as np
 import face_recognition
 
-from local_utils import (
-    find_encodings, mark_attendance, unknown_list, 
-    load_known_faces, load_unknown_faces, clear_unknown_faces_local,
-    add_new_user, remove_user
-)
-
-from firebase_utils import (
-    add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase,
-    clear_unknown_faces_firebase, upload_single_image_to_firebase, remove_user_from_firebase,
-    load_known_faces_firebase, load_unknown_faces_firebase
-)
-
 USE_CLOUD = True
 
 if USE_CLOUD:
+    from firebase_utils import (
+        find_encodings, encode_new_face,
+        add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase,
+        clear_unknown_faces_firebase, upload_single_image_to_firebase, remove_user_from_firebase,
+        load_known_faces_firebase, load_unknown_faces_firebase
+    )
+else:
+    from local_utils import (
+        find_encodings, mark_attendance, unknown_list, 
+        load_known_faces, load_unknown_faces, clear_unknown_faces_local,
+        add_new_user, remove_user
+    )
 
+if USE_CLOUD:
     images, class_names = load_known_faces_firebase()
     encoded_unknowns, unknown_names = load_unknown_faces_firebase()
+
 else:
     path = 'base-images'
     images, class_names = load_known_faces(path)
@@ -88,24 +90,25 @@ while True:
     key = cv2.waitKey(1) & 0xFF
 
     if key == ord('n'):
-        new_encoding, new_name, new_image = add_new_user(img)
+        if USE_CLOUD:
+            new_encoding, new_name, new_image = encode_new_face(img)
 
-        if new_encoding is not None and new_name:
-            print("Enter the designation")
-            designation = input()
+            if new_encoding is not None and new_name:
+                print("Enter the designation")
+                designation = input()
 
-            if USE_CLOUD: 
                 upload_single_image_to_firebase(new_name, new_image, "known_faces")
                 add_user_to_realtime_database(new_name, designation) 
-            else:  
-                image_path = f"base-images/{new_name}.jpg"
-                cv2.imwrite(image_path, new_image)
 
+        else:
+            new_encoding, new_name, new_image = add_new_user(img)
+
+        if new_encoding is not None and new_name:
             encode_list_known.append(new_encoding)
             class_names.append(new_name)
             images.append(new_image)
-            
-            print(f"Added new face: {new_name}")
+        
+        print(f"Added new face: {new_name}")
 
     elif key == ord('r'):
         user_name = input("Enter the name of the user to remove: ").strip()
@@ -115,7 +118,6 @@ while True:
             remove_user_from_firebase(user_name, encode_list_known, class_names, images)
 
         else:
-
             remove_user(user_name, encode_list_known, class_names, images)
             
         print(f"User '{user_name}' removed successfully.")
