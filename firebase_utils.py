@@ -162,9 +162,16 @@ def upload_unknown_face_to_firebase(img):
 
 def clear_unknown_faces_firebase(firebase_folder="unknown_faces"):
     try:
-        for blob in bucket.list_blobs(prefix=f"{firebase_folder}/"):
+        blobs = bucket.list_blobs(prefix=f"{firebase_folder}/")
+        for blob in blobs:
+            blob_name = blob.name
             blob.delete()
-            print(f"Deleted: {blob.name}")
+            print(f"Deleted: {blob_name}")
+        
+        db_ref = db.reference('Unknown Faces')
+        db_ref.delete() 
+        print("Cleared all records under 'Unknown Faces' from Realtime Database")
+        
     except Exception as e:
         print(f"Error clearing unknown faces from Firebase: {e}")
 
