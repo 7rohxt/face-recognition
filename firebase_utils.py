@@ -138,25 +138,30 @@ def remove_user_from_firebase(user_name, encodings_list, class_names, image_list
 
 def upload_unknown_face_to_firebase(img):
 
-    name = f"Unknown_{str(uuid.uuid4().hex[:4])}"
-    time_now = datetime.now()
-    filename = f"unknown_faces/{name}_{time_now}.jpg"
+    try:
+        success, encoded_image = cv2.imencode('.jpg', img)
+        if not success:
+            print("Failed to encode image.")
+            return
 
-    img_bgr = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    _, img_encoded = cv2.imencode('.jpg', img_bgr)
+        name = f"Unknown_{str(uuid.uuid4().hex[:4])}"
+        time_now = datetime.now()
+        filename = f"unknown_faces/{name}_{time_now}.jpg"
 
-    bucket = storage.bucket()
-    blob = bucket.blob(filename)
-    blob.upload_from_string(img_encoded.tobytes(), content_type='image/jpeg')
+        blob = bucket.blob(filename)
+        blob.upload_from_string(encoded_image.tobytes(), content_type='image/jpeg')
 
-    db_ref = db.reference('Unknown Faces')
-    db_ref.push({
-        'id': name,
-        'recognized_at': time_now.isoformat(),
-        'image_url': f"gs://face-attendance-8a90a/{filename}"
-    })
+        db_ref = db.reference('Unknown Faces')
+        db_ref.push({
+            'id': name,
+            'recognized_at': time_now.isoformat(),
+            'image_url': f"gs://face-attendance-8a90a/{filename}"
+        })
 
-    print(f"Uploaded unknown face {name} to Firebase Storage and saved to Realtime Database")
+        print(f"Uploaded unknown face {name} to Firebase Storage and saved to Realtime Database")
+
+    except Exception as e:
+        print(f"Error uploading image to Firebase: {e}")
 
     return name
 
@@ -170,6 +175,7 @@ def clear_unknown_faces_firebase(firebase_folder="unknown_faces"):
         
         db_ref = db.reference('Unknown Faces')
         db_ref.delete() 
+        
         print("Cleared all records under 'Unknown Faces' from Realtime Database")
         
     except Exception as e:

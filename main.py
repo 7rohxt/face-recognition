@@ -32,6 +32,7 @@ else:
 encode_list_known = find_encodings(images)
 print('Encoding Done')
 
+scaling_factor = 0.25
 cap = cv2.VideoCapture(0)
 
 while True:
@@ -40,7 +41,7 @@ while True:
         print("Failed to grab frame from webcam.")
         break
 
-    scaled_img = cv2.resize(img, (0, 0), None, 0.25, 0.25)
+    scaled_img = cv2.resize(img, (0, 0), fx=scaling_factor, fy=scaling_factor)
     scaled_img = cv2.cvtColor(scaled_img, cv2.COLOR_BGR2RGB)
 
     current_face = face_recognition.face_locations(scaled_img)
@@ -135,6 +136,9 @@ while True:
         else:
             clear_unknown_faces_local()  
             print("Cleared unknown faces from local storage.")
+        
+        encoded_unknowns.clear() 
+        unknown_names.clear()
 
 
     elif key == ord('q'):
