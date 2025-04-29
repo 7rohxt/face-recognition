@@ -98,11 +98,11 @@ while True:
 
     if key == ord('n'):
         if USE_CLOUD:
-            new_encoding, new_name, new_image = encode_new_face(img)
+            new_encoding, new_image = encode_new_face(img)
 
             if new_encoding is not None and new_name:
-                print("Enter the designation")
-                designation = input()
+                name = input("Enter name for the new face: ").strip()
+                designation = input("Enter the designation")
 
                 upload_single_image_to_firebase(new_name, new_image, "known_faces")
                 add_user_to_realtime_database(new_name, designation) 

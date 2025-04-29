@@ -78,11 +78,9 @@ def encode_new_face(img):
 
     if not encodings:
         print("No face found in the frame.")
-        return None, None, None
+        return None, None
 
-    name = input("Enter name for the new face: ").strip()
-
-    return encodings[0], name, img
+    return encodings[0], img
  
 def upload_single_image_to_firebase(new_name, new_img, folder_name_in_firebase):
     try:
