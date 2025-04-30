@@ -44,18 +44,16 @@ def load_faces_from_firebase(bucket_folder):
 
 def add_user_to_firebase(new_name, new_img, folder_name_in_firebase):
     try:
-        # Encode the image 
         success, encoded_image = cv2.imencode('.jpg', new_img)
         if not success:
             print("Failed to encode image.")
             return
 
-        # Upload to Firebase
         filename = f"{new_name}.jpg"
         blob = bucket.blob(f"{folder_name_in_firebase}/{filename}")
         blob.upload_from_string(encoded_image.tobytes(), content_type='image/jpeg')
 
-        print(f"Uploaded {filename} directly to {folder_name_in_firebase}/ in Firebase.")
+        print(f"Added {filename} to {folder_name_in_firebase}/ in Firebase.")
 
     except Exception as e:
         print(f"Error uploading image to Firebase: {e}")
@@ -75,14 +73,7 @@ def remove_user_from_realtime_database(name):
     user_ref.delete()
     print(f"Removed {name} from Firebase Realtime Database.")
 
-def remove_user_from_firebase(user_name, encodings_list, class_names, image_list):
-    if user_name in class_names:
-        idx = class_names.index(user_name)
-        class_names.pop(idx)
-        encodings_list.pop(idx)
-        image_list.pop(idx)
-        print(f"Removed {user_name} from local memory.")
-        
+def remove_user_from_firebase(user_name):    
     try:
         from firebase_utils import bucket
         blob = bucket.blob(f"known_faces/{user_name}.jpg")
@@ -95,7 +86,6 @@ def remove_user_from_firebase(user_name, encodings_list, class_names, image_list
         print(f"Error deleting {user_name}.jpg from Firebase: {e}")
 
 def upload_unknown_face_to_firebase(img):
-
     try:
         success, encoded_image = cv2.imencode('.jpg', img)
         if not success:

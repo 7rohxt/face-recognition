@@ -95,8 +95,14 @@ while True:
     elif key == ord('r'):
         user_name = input("Enter the name of the user to remove: ").strip()
 
+        if user_name in known_names:
+            idx = known_names.index(user_name)
+            known_names.pop(idx)
+            encoded_knowns.pop(idx)
+            known_images.pop(idx)
+            
         remove_user_from_realtime_database(user_name)  
-        remove_user_from_firebase(user_name, encoded_knowns, known_names, known_images)
+        remove_user_from_firebase(user_name)
 
         print(f"User '{user_name}' removed successfully.")
 
