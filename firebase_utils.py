@@ -1,3 +1,5 @@
+# Imports 
+
 import os
 import cv2
 import numpy as np
@@ -9,8 +11,10 @@ import threading
 from firebase_configure import bucket, ref
 from firebase_admin import storage, db
 
-def find_encodings(images):
 
+# Face Encoding Utilities 
+
+def find_encodings(images):
     encode_list = []
     for img in images:
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -19,9 +23,11 @@ def find_encodings(images):
             encode_list.append(encodings[0])
         else:
             print("No face found in one of the images, skipping it.")
-
     return encode_list 
- 
+
+
+# Load Known Faces 
+
 def load_faces_from_firebase(bucket_folder):
     bucket = storage.bucket()
     blobs = bucket.list_blobs(prefix=f"{bucket_folder}/")
@@ -43,7 +49,10 @@ def load_faces_from_firebase(bucket_folder):
     print(f"Loaded {len(images)} images from Firebase folder '{bucket_folder}': {names}")
     return images, names
 
-def add_user_to_firebase(new_name, new_img, folder_name_in_firebase):
+
+# Add User Utilities 
+
+def add_user_to_storage(new_name, new_img, folder_name_in_firebase):
     try:
         success, encoded_image = cv2.imencode('.jpg', new_img)
         if not success:
@@ -59,7 +68,8 @@ def add_user_to_firebase(new_name, new_img, folder_name_in_firebase):
     except Exception as e:
         print(f"Error uploading image to Firebase: {e}")
 
-def add_user_to_realtime_database(name, designation):
+
+def add_user_to_database(name, designation):
     data = {
         "name": name,
         "designation": designation,
@@ -69,12 +79,10 @@ def add_user_to_realtime_database(name, designation):
     ref.child(name).set(data)
     print(f"User {name} added to Firebase with designation {designation}.")
 
-def remove_user_from_realtime_database(name):
-    user_ref = ref.child(name)
-    user_ref.delete()
-    print(f"Removed {name} from Firebase Realtime Database.")
 
-def remove_user_from_firebase(user_name):    
+# Remove User Utilities 
+
+def remove_user_from_storage(user_name):    
     try:
         from firebase_utils import bucket
         blob = bucket.blob(f"known_faces/{user_name}.jpg")
@@ -85,6 +93,15 @@ def remove_user_from_firebase(user_name):
             print(f"{user_name}.jpg does not exist in Firebase Storage.")
     except Exception as e:
         print(f"Error deleting {user_name}.jpg from Firebase: {e}")
+
+
+def remove_user_from_database(name):
+    user_ref = ref.child(name)
+    user_ref.delete()
+    print(f"Removed {name} from Firebase Realtime Database.")
+
+
+# Unknown Face Handling 
 
 def upload_unknown_face_to_firebase(img):
     try:
@@ -114,6 +131,7 @@ def upload_unknown_face_to_firebase(img):
 
     return name
 
+
 def clear_unknown_faces_storage(firebase_folder="unknown_faces"):
     try:
         blobs = bucket.list_blobs(prefix=f"{firebase_folder}/")
@@ -124,13 +142,17 @@ def clear_unknown_faces_storage(firebase_folder="unknown_faces"):
     except Exception as e:
         return f"Error clearing unknown faces from Firebase Storage: {e}"
 
-def clear_unknown_faces_database():
+
+def clear_unknown_faces_database(firebase_folder="Unknown Faces"):
     try:
-        db_ref = db.reference('Unknown Faces')
+        db_ref = db.reference(f'{firebase_folder}')
         db_ref.delete()
         return "Cleared all records under 'Unknown Faces' from Realtime Database"
     except Exception as e:
         return f"Error clearing unknown faces from Realtime Database: {e}"
+
+
+# Attendance Tracking 
 
 attendance_flags = {}
 
@@ -145,6 +167,7 @@ def load_attendance_flags():
                 attendance_flags[name] = last_time
             except ValueError:
                 print(f"Invalid date format for {name}: {last_time_str}")
+
 
 def update_attendance_firebase(name):
     now = datetime.now()
@@ -170,9 +193,12 @@ def update_attendance_firebase(name):
         attendance_flags[name] = now
         print(f"Attendance updated for {name}")
 
-def execute_parallel_tasks(task1, task2, *args):
-    thread1 = threading.Thread(target=task1, args=args)
-    thread2 = threading.Thread(target=task2, args=args)
+
+# Parallel Execution 
+
+def execute_parallel_tasks(task1, task2, args1, args2):
+    thread1 = threading.Thread(target=task1, args=(args1,))
+    thread2 = threading.Thread(target=task2, args=(args2,))
 
     thread1.start()
     thread2.start()
