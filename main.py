@@ -3,16 +3,16 @@ import numpy as np
 import face_recognition
 
 from firebase_utils import (
-    find_encodings, encode_new_face,
+    load_faces_from_firebase, find_encodings, 
+    encode_new_face,
     add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase,
     clear_unknown_faces_firebase, upload_single_image_to_firebase, remove_user_from_firebase, upload_unknown_face_to_firebase,
-    load_known_faces_firebase, load_unknown_faces_firebase
 )
 
-known_images, known_names = load_known_faces_firebase()
+known_images, known_names = load_faces_from_firebase("known_faces")
 encoded_knowns = find_encodings(known_images)
 
-unknown_images, unknown_names = load_unknown_faces_firebase()
+unknown_images, unknown_names = load_faces_from_firebase("unknown_faces")
 encoded_unknowns = find_encodings(unknown_images)
 
 print('Encoding Done')

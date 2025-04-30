@@ -19,69 +19,27 @@ def find_encodings(images):
             print("No face found in one of the images, skipping it.")
     return encodeList
 
-def load_known_faces_firebase(bucket_folder="known_faces"):
+def load_faces_from_firebase(bucket_folder):
     bucket = storage.bucket()
-    blobs = bucket.list_blobs(prefix=bucket_folder + "/")
+    blobs = bucket.list_blobs(prefix=f"{bucket_folder}/")
 
     images = []
-    class_names = []
+    names = []
 
     for blob in blobs:
-        if blob.name.endswith(('.png', '.jpg', '.jpeg')):
+        if blob.name.lower().endswith(('.png', '.jpg', '.jpeg')):
             img_bytes = blob.download_as_bytes()
             img_array = np.frombuffer(img_bytes, np.uint8)
             img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
 
             if img is not None:
                 images.append(img)
-                class_name = os.path.splitext(os.path.basename(blob.name))[0]
-                class_names.append(class_name)
+                name = os.path.splitext(os.path.basename(blob.name))[0]
+                names.append(name)
 
-    print("Loaded known faces from Firebase:", class_names)
-    return images, class_names
+    print(f"Loaded {len(images)} images from Firebase folder '{bucket_folder}': {names}")
+    return images, names
 
-def load_unknown_faces_firebase(bucket_folder="unknown_faces"):
-    bucket = storage.bucket()
-    blobs = bucket.list_blobs(prefix=bucket_folder + "/")
-
-    encoded_unknowns = []
-    unknown_names = []
-
-    for blob in blobs:
-        if blob.name.endswith(('.png', '.jpg', '.jpeg')):
-            img_bytes = blob.download_as_bytes()
-            img_array = np.frombuffer(img_bytes, np.uint8)
-            img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-
-            if img is not None:
-                rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                encodings = face_recognition.face_encodings(rgb)
-                if encodings:
-                    encoded_unknowns.append(encodings[0])
-                    name = os.path.splitext(os.path.basename(blob.name))[0]
-                    unknown_names.append(name)
-
-    print("Loaded unknown faces from Firebase:", unknown_names)
-    return encoded_unknowns, unknown_names
-
-def upload_images_to_firebase(folder_path, folder_name_in_firebase):
-    for filename in os.listdir(folder_path):
-        if filename.endswith(".jpg") or filename.endswith(".png"):
-            local_path = os.path.join(folder_path, filename)
-            blob = bucket.blob(f"{folder_name_in_firebase}/{filename}")
-            blob.upload_from_filename(local_path)
-            print(f"Uploaded {filename} to {folder_name_in_firebase}/ in Firebase.")
-
-def encode_new_face(img):
-    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    encodings = face_recognition.face_encodings(rgb_img)
-
-    if not encodings:
-        print("No face found in the frame.")
-        return None, None
-
-    return encodings[0], img
- 
 def upload_single_image_to_firebase(new_name, new_img, folder_name_in_firebase):
     try:
         # Encode the image 
