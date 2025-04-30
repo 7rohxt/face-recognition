@@ -2,63 +2,48 @@ import cv2
 import numpy as np
 import face_recognition
 
-USE_CLOUD = True
+from firebase_utils import (
+    find_encodings, encode_new_face,
+    add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase,
+    clear_unknown_faces_firebase, upload_single_image_to_firebase, remove_user_from_firebase, upload_unknown_face_to_firebase,
+    load_known_faces_firebase, load_unknown_faces_firebase
+)
 
-if USE_CLOUD:
-    from firebase_utils import (
-        find_encodings, encode_new_face,
-        add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase,
-        clear_unknown_faces_firebase, upload_single_image_to_firebase, remove_user_from_firebase, upload_unknown_face_to_firebase,
-        load_known_faces_firebase, load_unknown_faces_firebase
-    )
-else:
-    from local_utils import (
-        find_encodings, mark_attendance, unknown_list, 
-        load_known_faces, load_unknown_faces, clear_unknown_faces_local,
-        add_new_user, remove_user
-    )
+known_images, known_names = load_known_faces_firebase()
+encoded_knowns = find_encodings(known_images)
 
-if USE_CLOUD:
-    images, class_names = load_known_faces_firebase()
-    encoded_unknowns, unknown_names = load_unknown_faces_firebase()
+unknown_images, unknown_names = load_unknown_faces_firebase()
+encoded_unknowns = find_encodings(unknown_images)
 
-else:
-    path = 'base-images'
-    images, class_names = load_known_faces(path)
-
-    unknown_path = 'unknowns'
-    encoded_unknowns, unknown_names = load_unknown_faces(unknown_path)
-
-encode_list_known = find_encodings(images)
 print('Encoding Done')
 
 scaling_factor = 0.25
 cap = cv2.VideoCapture(0)
 
 while True:
-    success, img = cap.read()
+    success, frame = cap.read()
     if not success:
         print("Failed to grab frame from webcam.")
         break
 
-    scaled_img = cv2.resize(img, (0, 0), fx=scaling_factor, fy=scaling_factor)
-    scaled_img = cv2.cvtColor(scaled_img, cv2.COLOR_BGR2RGB)
+    scaled_frame = cv2.resize(frame, (0, 0), fx=scaling_factor, fy=scaling_factor)
+    scaled_frame = cv2.cvtColor(scaled_frame, cv2.COLOR_BGR2RGB)
 
-    current_face = face_recognition.face_locations(scaled_img)
-    encodes_current_face = face_recognition.face_encodings(scaled_img, current_face)
+    current_face = face_recognition.face_locations(scaled_frame)
+    encodes_current_face = face_recognition.face_encodings(scaled_frame, current_face)
 
     for encode_face, face_loc in zip(encodes_current_face, current_face):
         y1, x2, y2, x1 = face_loc
         y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
 
-        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 1)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 1)
 
-        matches = face_recognition.compare_faces(encode_list_known, encode_face)
-        face_dis = face_recognition.face_distance(encode_list_known, encode_face)
+        matches = face_recognition.compare_faces(encoded_knowns, encode_face)
+        face_dis = face_recognition.face_distance(encoded_knowns, encode_face)
         match_index = np.argmin(face_dis)
 
         if len(face_dis) > 0 and face_dis[match_index] < 0.50:
-            name = class_names[match_index]#.upper() ## mismatch in incrementing
+            name = known_names[match_index]#.upper() ## mismatch in incrementing
         else:
             unknown_matches = face_recognition.compare_faces(encoded_unknowns, encode_face)
             unknown_distances = face_recognition.face_distance(encoded_unknowns, encode_face)
@@ -69,12 +54,9 @@ while True:
                 print(f"Matched with a previous unknown: {name}")
 
             else:
-                encodings = face_recognition.face_encodings(img)
-                
-                if USE_CLOUD:
-                    new_name = upload_unknown_face_to_firebase(img)
-                else:
-                    new_name = unknown_list(img)
+                encodings = face_recognition.face_encodings(frame)
+
+                new_name = upload_unknown_face_to_firebase(frame)
 
                 if encodings:
                     encoded_unknowns.append(encodings[0])
@@ -82,60 +64,45 @@ while True:
                 unknown_names.append(new_name)
                 name = new_name
 
-        # Display name in the bounding box
-        cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
-        cv2.putText(img, name, (x1 + 6, y2 - 12), cv2.FONT_HERSHEY_COMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.rectangle(frame, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
+        cv2.putText(frame, name, (x1 + 6, y2 - 12), cv2.FONT_HERSHEY_COMPLEX, 0.7, (255, 255, 255), 2)
 
-        if USE_CLOUD:
-            if name in class_names:
-                update_attendance_firebase(name) 
-        else:
-            mark_attendance(name) ## update attendence in local excel sheet
+        if name in known_names:
+            update_attendance_firebase(name) 
 
-    cv2.imshow('Webcam', img)
+    cv2.imshow('Webcam', frame)
 
     key = cv2.waitKey(1) & 0xFF
 
     if key == ord('n'):
-        if USE_CLOUD:
-            new_encoding, new_image = encode_new_face(img)
 
-            if new_encoding is not None and new_name:
-                name = input("Enter name for the new face: ").strip()
-                designation = input("Enter the designation")
-
-                upload_single_image_to_firebase(new_name, new_image, "known_faces")
-                add_user_to_realtime_database(new_name, designation) 
-
-        else:
-            new_encoding, new_name, new_image = add_new_user(img)
+        new_encoding, new_image = encode_new_face(frame)
 
         if new_encoding is not None and new_name:
-            encode_list_known.append(new_encoding)
-            class_names.append(new_name)
-            images.append(new_image)
+            name = input("Enter name for the new face: ").strip()
+            designation = input("Enter the designation")
+
+            upload_single_image_to_firebase(new_name, new_image, "known_faces")
+            add_user_to_realtime_database(new_name, designation) 
+
+            encoded_knowns.append(new_encoding)
+            known_names.append(new_name)
+            known_images.append(new_image)
         
         print(f"Added new face: {new_name}")
 
     elif key == ord('r'):
         user_name = input("Enter the name of the user to remove: ").strip()
-       
-        if USE_CLOUD:
-            remove_user_from_realtime_database(user_name)  # Remove from Realtime Database separately
-            remove_user_from_firebase(user_name, encode_list_known, class_names, images)
 
-        else:
-            remove_user(user_name, encode_list_known, class_names, images)
-            
+        remove_user_from_realtime_database(user_name)  
+        remove_user_from_firebase(user_name, encoded_knowns, known_names, known_images)
+
         print(f"User '{user_name}' removed successfully.")
 
     elif key == ord('u'):
-        if USE_CLOUD:
-            clear_unknown_faces_firebase()  
-            print("Cleared unknown faces from Firebase.")
-        else:
-            clear_unknown_faces_local()  
-            print("Cleared unknown faces from local storage.")
+  
+        clear_unknown_faces_firebase()  
+        print("Cleared unknown faces from Firebase.")
         
         encoded_unknowns.clear() 
         unknown_names.clear()

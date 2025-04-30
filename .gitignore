@@ -7,3 +7,4 @@ unknowns/
 __pycache__
 serviceAccountKey.json
 basics.py
+local_main.py
