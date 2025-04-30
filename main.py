@@ -7,7 +7,8 @@ from firebase_utils import (
     add_user_to_firebase, remove_user_from_firebase,
     add_user_to_realtime_database, remove_user_from_realtime_database, 
     load_attendance_flags, update_attendance_firebase, 
-    upload_unknown_face_to_firebase, clear_unknown_faces_firebase
+    upload_unknown_face_to_firebase, clear_unknown_faces_storage, clear_unknown_faces_database,
+    execute_parallel_tasks
 )
 
 # Load all the users from firebase and encode the images
@@ -92,9 +93,13 @@ while True:
             known_names.append(new_name)
             known_images.append(new_image)
 
-            add_user_to_firebase(new_name, new_image, "known_faces")
-            add_user_to_realtime_database(new_name, designation) 
-        
+            # Threads
+            execute_parallel_tasks(add_user_to_firebase, 
+                                   add_user_to_realtime_database, 
+                                   new_name, new_image, "known_faces", 
+                                   new_name, designation)
+
+
         print(f"Added new face: {new_name}")
 
     # Remove an existing user
@@ -106,15 +111,21 @@ while True:
             known_names.pop(idx)
             encoded_knowns.pop(idx)
             known_images.pop(idx)
-            
-        remove_user_from_realtime_database(user_name)  
-        remove_user_from_firebase(user_name)
+
+        # Threads
+        execute_parallel_tasks(remove_user_from_firebase, 
+                               remove_user_from_realtime_database, 
+                               user_name)
 
         print(f"User '{user_name}' removed successfully.")
 
     # Clear all the unknows faces captured
     elif key == ord('u'):
-        clear_unknown_faces_firebase()  
+
+        # Threads
+        execute_parallel_tasks(clear_unknown_faces_storage, 
+                               clear_unknown_faces_database)
+
         print("Cleared unknown faces from Firebase.")
         
         encoded_unknowns.clear() 

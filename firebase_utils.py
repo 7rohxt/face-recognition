@@ -4,6 +4,7 @@ import numpy as np
 import face_recognition
 from datetime import datetime, timedelta
 import uuid
+import threading
 
 from firebase_configure import bucket, ref
 from firebase_admin import storage, db
@@ -168,3 +169,13 @@ def update_attendance_firebase(name):
 
         attendance_flags[name] = now
         print(f"Attendance updated for {name}")
+
+def execute_parallel_tasks(task1, task2, *args):
+    thread1 = threading.Thread(target=task1, args=args)
+    thread2 = threading.Thread(target=task2, args=args)
+
+    thread1.start()
+    thread2.start()
+
+    thread1.join()
+    thread2.join()
