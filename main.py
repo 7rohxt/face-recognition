@@ -3,10 +3,9 @@ import numpy as np
 import face_recognition
 
 from firebase_utils import (
-    load_faces_from_firebase, find_encodings, 
-    encode_new_face,
+    load_faces_from_firebase, find_encodings,
     add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase,
-    clear_unknown_faces_firebase, upload_single_image_to_firebase, remove_user_from_firebase, upload_unknown_face_to_firebase,
+    clear_unknown_faces_firebase, add_user_to_firebase, remove_user_from_firebase, upload_unknown_face_to_firebase,
 )
 
 known_images, known_names = load_faces_from_firebase("known_faces")
@@ -76,18 +75,20 @@ while True:
 
     if key == ord('n'):
 
-        new_encoding, new_image = encode_new_face(frame)
+        new_image = frame
+        new_encoding_list = find_encodings([new_image]) ## function expects a list and returns a list
 
-        if new_encoding is not None and new_name:
+        if new_encoding_list is not None and new_name:
+            new_encoding  = new_encoding_list[0]
             name = input("Enter name for the new face: ").strip()
             designation = input("Enter the designation")
-
-            upload_single_image_to_firebase(new_name, new_image, "known_faces")
-            add_user_to_realtime_database(new_name, designation) 
 
             encoded_knowns.append(new_encoding)
             known_names.append(new_name)
             known_images.append(new_image)
+
+            add_user_to_firebase(new_name, new_image, "known_faces")
+            add_user_to_realtime_database(new_name, designation) 
         
         print(f"Added new face: {new_name}")
 
