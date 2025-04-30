@@ -4,10 +4,13 @@ import face_recognition
 
 from firebase_utils import (
     load_faces_from_firebase, find_encodings,
-    add_user_to_realtime_database, remove_user_from_realtime_database, update_attendance_firebase,
-    clear_unknown_faces_firebase, add_user_to_firebase, remove_user_from_firebase, upload_unknown_face_to_firebase,
+    add_user_to_firebase, remove_user_from_firebase,
+    add_user_to_realtime_database, remove_user_from_realtime_database, 
+    load_attendance_flags, update_attendance_firebase, 
+    upload_unknown_face_to_firebase, clear_unknown_faces_firebase
 )
 
+# Load all the users from firebase and encode the images
 known_images, known_names = load_faces_from_firebase("known_faces")
 encoded_knowns = find_encodings(known_images)
 
@@ -15,6 +18,9 @@ unknown_images, unknown_names = load_faces_from_firebase("unknown_faces")
 encoded_unknowns = find_encodings(unknown_images)
 
 print('Encoding Done')
+
+# Load last attendance time for all users
+load_attendance_flags()
 
 scaling_factor = 0.25
 cap = cv2.VideoCapture(0)
@@ -70,11 +76,10 @@ while True:
             update_attendance_firebase(name) 
 
     cv2.imshow('Webcam', frame)
-
     key = cv2.waitKey(1) & 0xFF
 
+    # Add a new user
     if key == ord('n'):
-
         new_image = frame
         new_encoding_list = find_encodings([new_image]) ## function expects a list and returns a list
 
@@ -92,6 +97,7 @@ while True:
         
         print(f"Added new face: {new_name}")
 
+    # Remove an existing user
     elif key == ord('r'):
         user_name = input("Enter the name of the user to remove: ").strip()
 
@@ -106,15 +112,15 @@ while True:
 
         print(f"User '{user_name}' removed successfully.")
 
+    # Clear all the unknows faces captured
     elif key == ord('u'):
-  
         clear_unknown_faces_firebase()  
         print("Cleared unknown faces from Firebase.")
         
         encoded_unknowns.clear() 
         unknown_names.clear()
 
-
+    # Exit the loop
     elif key == ord('q'):
         break
 

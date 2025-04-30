@@ -130,6 +130,19 @@ def clear_unknown_faces_firebase(firebase_folder="unknown_faces"):
         print(f"Error clearing unknown faces from Firebase: {e}")
 
 attendance_flags = {}
+
+def load_attendance_flags():
+    global attendance_flags
+    data = ref.get()  # Fetch all user data
+    for name, info in data.items():
+        last_time_str = info.get("last_attendance_time")
+        if last_time_str:
+            try:
+                last_time = datetime.strptime(last_time_str, "%Y-%m-%d %H:%M:%S")
+                attendance_flags[name] = last_time
+            except ValueError:
+                print(f"Invalid date format for {name}: {last_time_str}")
+
 def update_attendance_firebase(name):
     now = datetime.now()
 
