@@ -205,3 +205,25 @@ def execute_parallel_tasks(task1, task2, args1, args2):
 
     thread1.join()
     thread2.join()
+
+
+# Display Known Users
+
+import cv2
+
+def display_known_faces(known_images, known_names, attendance_fags):
+    for img, name in zip(known_images, known_names):
+        display_img = img.copy()
+        if name in attendance_flags:
+            time_text = f"Last seen: {attendance_flags[name].strftime('%Y-%m-%d %H:%M:%S')}"
+        else:
+            time_text = "Not marked yet"
+
+        cv2.putText(display_img, name, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        cv2.putText(display_img, time_text, (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+
+        cv2.imshow(f"{name}", display_img)
+        cv2.waitKey(500) 
+
+    cv2.destroyAllWindows()
+
