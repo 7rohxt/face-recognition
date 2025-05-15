@@ -15,8 +15,13 @@ from firebase_utils import (
     upload_unknown_face_to_firebase, 
     clear_unknown_faces_storage, clear_unknown_faces_database,
 
+    display_known_faces, #display_unknown_faces,
+
     execute_parallel_tasks
 )
+
+# Data Visualization functions
+from dashboard import show_attendance_dashboard
 
 # Load all the users from firebase and encode the images
 known_images, known_names = load_faces_from_firebase("known_faces")
@@ -27,8 +32,9 @@ encoded_unknowns = find_encodings(unknown_images)
 
 print('Encoding Done')
 
+
 # Load last attendance time for all users
-load_attendance_flags()
+attendance_flags = load_attendance_flags()
 
 # Initialize webcam
 scaling_factor = 0.25
@@ -70,7 +76,7 @@ while True:
 
             if len(unknown_distances) > 0 and min(unknown_distances) < 0.50:
                 matched_index = np.argmin(unknown_distances)
-                name = unknown_names[matched_index]
+                name = unknown_names[matched_index].upper()
                 print(f"Matched with a previous unknown: {name}")
                 
             else:
@@ -95,16 +101,15 @@ while True:
     cv2.imshow('Webcam', frame)
     key = cv2.waitKey(1) & 0xFF
 
-
     # Add a new user
-    if key == ord('n'):
+    if key == ord('a'):
         new_image = frame
         new_encoding_list = find_encodings([new_image]) ## function expects a list and returns a list
 
-        if new_encoding_list is not None:
+        if new_encoding_list:
             new_encoding  = new_encoding_list[0]
-            new_name = input("Enter name for the new face: ").strip()
-            designation = input("Enter the designation")
+            new_name = input("Enter name for the new face: ").strip().upper()
+            designation = input("Enter the designation: ")
 
             encoded_knowns.append(new_encoding)
             known_names.append(new_name)
@@ -119,12 +124,14 @@ while True:
                                    args1, args2
                                    )
                                    
+            print(f"Added new face: {new_name}")
 
-        print(f"Added new face: {new_name}")
+        else:
+            print("No face detected. Please try again")
 
     # Remove an existing user
     elif key == ord('r'):
-        user_name = input("Enter the name of the user to remove: ").strip()
+        user_name = input("Enter the name of the user to remove: ").strip().upper()
 
         if user_name in known_names:
             idx = known_names.index(user_name)
@@ -135,24 +142,36 @@ while True:
         # Threads
         execute_parallel_tasks(remove_user_from_storage, 
                                remove_user_from_database, 
-                               user_name, user_name
+                               (user_name,), ## Function expects a tuple
+                               (user_name,)
                                )
 
         print(f"User '{user_name}' removed successfully.")
 
     # Clear all the unknows faces captured
-    elif key == ord('u'):
-
+    elif key == ord('c'):
         # Threads
         execute_parallel_tasks(clear_unknown_faces_storage, 
                                clear_unknown_faces_database,
-                               "unknown_faces",
-                               "Unknown Faces")
+                               ("unknown_faces",),
+                               ("Unknown Faces",))
 
         print("Cleared unknown faces from Firebase.")
         
         encoded_unknowns.clear() 
         unknown_names.clear()
+    
+    # Display attendance dashboard
+    elif key == ord('d'):
+        show_attendance_dashboard()
+
+    # Display known users
+    elif key == ord('k'):
+        display_known_faces(known_images, known_names, attendance_flags)
+
+    # # Displau unknown users
+    # elif key == ord('u'):
+    #     display_unknown_faces(unknown_images, unknown_names)
 
     # Exit the loop
     elif key == ord('q'):
